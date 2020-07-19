@@ -16,7 +16,8 @@ CLEAN LINE VERSIONS
 ----------------------------------------------------------------------------------------------------
 V1 - Original version by Tim Mullen
 
-V2 - Include a rewrite (made default method) by Kay Robbins
+V2 - Include a rewrite (made default method) by Kay Robbins with integration by Arnaud Delorme and 
+testing by Makoto Miyakoshi
 
 ----------------------------------------------------------------------------------------------------
 INSTALLATION INSTRUCTIONS
