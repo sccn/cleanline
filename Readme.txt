@@ -12,6 +12,13 @@ CleanLine also makes use of the arg() functionality from Christian Kothe's BCILA
 (sccn.ucsd.edu/wiki/BCILAB)
 
 ----------------------------------------------------------------------------------------------------
+CLEAN LINE VERSIONS
+----------------------------------------------------------------------------------------------------
+V1 - Original version by Tim Mullen
+
+V2 - Include a rewrite (made default method) by Kay Robbins
+
+----------------------------------------------------------------------------------------------------
 INSTALLATION INSTRUCTIONS
 ----------------------------------------------------------------------------------------------------
 

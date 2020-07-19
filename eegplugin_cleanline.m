@@ -36,7 +36,7 @@
 
 function vers = eegplugin_cleanline(fig, trystrs, catchstrs)
 
-    vers = 'cleanline';
+    vers = 'cleanline2.0';
     if nargin < 3
         error('eegplugin_cleanline requires 3 arguments');
     end;
