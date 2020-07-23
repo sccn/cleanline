@@ -91,7 +91,7 @@ else
     
     % clean data
     disp('Running cleanLineNoise...');
-    EEG = cleanLineNoise(EEG, lineNoiseIn);
+    EEGclean = cleanLineNoise(EEG, lineNoiseIn);
 end
 
 % 06/22/2018 Makoto. Disabled.
