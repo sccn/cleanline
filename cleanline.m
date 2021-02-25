@@ -166,9 +166,8 @@ g = arg_define([0 1], varargin, ...
     arg({'normSpectrum','NormalizeSpectrum'},false,[],'Normalize log spectrum by detrending. Not generally recommended.'), ...
     arg({'verb','VerboseOutput','VerbosityLevel'},true,[],'Produce verbose output.'), ...
     arg({'plotfigures','PlotFigures'},false,[],'Plot Individual Figures. This will generate figures of F-statistic, spectrum, etc for each channel/comp while processing'), ...
-    arg({'legacy','Legacy'},false,[],'Use legacy code') ...
+    arg({'newversion','Newversion'},false,[],'Use new implementation (send us feedback)') ...
     );
-
 
 if any(g.chanlist > fastif(strcmpi(g.sigtype,'channels'),EEG.nbchan,size(EEG.icawinv,1)))
     error('''ChanCompIndices'' contains indices of channels or components that are not present in the dataset!');
@@ -176,6 +175,60 @@ end
             
 arg_toworkspace(g);
 
+if ~g.newversion
+    disp('Warning: staper bandwidth option not relevant for legacy original version');
+else
+    % Fix proposed by Kay
+    
+    % Warning
+    if g.normSpectrum
+        disp('Warning: spectrum normalization ignored; use legacy original version for this option');
+    end
+    if g.plotfigures
+        disp('Warning: plotting option ignored; use legacy original version for this option');
+    end
+    if g.scanforlines
+        disp('Warning: scan for lines option ignored; use legacy original version for this option');
+    end
+    
+    % default line noise fields
+    lineNoiseIn = struct('lineNoiseMethod', 'clean', ...
+        'lineNoiseChannels', g.chanlist,...
+        'Fs', EEG.srate, ...
+        'lineFrequencies', g.linefreqs,...
+        'p', g.p, ...
+        'fScanBandWidth', g.bandwidth, ...
+        'taperBandWidth', g.taperbandwidth, ...
+        'taperWindowSize', g.winsize, ...
+        'taperWindowStep', g.winstep, ...
+        'tau', g.tau, ...
+        'pad', g.pad, ...
+        'fPassBand', [0 EEG.srate/2], ...
+        'maximumIterations', 10);
+    
+    % change default based on g
+    if isfield(g, 'sigtype') && strcmpi(g.sigtype, 'Components')
+        error('Cannot use components - check the box to use the legacy original version to use components');
+    end
+    
+    % Set default values if field not already set
+    if length(lineNoiseIn.lineFrequencies) == 1
+        lf = lineNoiseIn.lineFrequencies;
+        lineNoiseIn.lineFrequencies = [ lf 2*lf 3*lf 4*lf ];
+    end
+    rmFreq = find(lineNoiseIn.lineFrequencies > EEG.srate/2);
+    lineNoiseIn.lineFrequencies(rmFreq) = [];
+    
+    % clean data
+    disp('Running cleanLineNoise (new version of cleanline)...');
+    EEG = cleanLineNoise(EEG, lineNoiseIn);
+    Sorig = [];
+    Sclean = [];
+    f = [];
+    amps = []; 
+    freqs = [];
+    return
+end
 
 % defaults
 [Sorig, Sclean, f, amps, freqs] = deal([]);
