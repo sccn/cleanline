@@ -1,4 +1,4 @@
-function [EEGclean, commstr, g, Sorig, Sclean, f, amps, freqs] = pop_cleanline(EEG,varargin)
+function [EEGclean, commstr, g, Sorig, Sclean, f, amps, freqs] = pop_cleanline(EEG, varargin)
 
 % Mandatory             Information
 % --------------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ EEGclean = EEG;
 
 if nargin<2
     % render GUI
-    g = arg_guidialog(@cleanline,'Parameters',{'EEG',EEG},'Title','CleanLine Options','Invoke',false);
+    g = arg_guidialog(@cleanline_check,'Parameters',{'EEG',EEG},'Title','CleanLine Options','Invoke',false);
     
     if isempty(g)
         return;
@@ -46,7 +46,11 @@ else
     g = hlp_varargin2struct(varargin);
 end
 
-[EEGclean, Sorig, Sclean, f, amps, freqs, g] = cleanline('EEG',EEG,g);
+if length(EEG) > 1
+    [EEGclean , com] = eeg_eval('cleanline', EEG, 'params', varargin);
+else
+    [EEGclean, Sorig, Sclean, f, amps, freqs, g] = cleanline(EEG, g);
+end
 
 % 06/22/2018 Makoto. Disabled.
 %
