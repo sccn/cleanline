@@ -1,4 +1,4 @@
-function [EEG, Sorig, Sclean, f, amps, freqs, g] = cleanline(varargin)
+function [EEG, Sorig, Sclean, f, amps, freqs, g] = cleanline(EEG, varargin)
 
 % Mandatory             Information
 % --------------------------------------------------------------------------------------------------
@@ -137,8 +137,6 @@ function [EEG, Sorig, Sclean, f, amps, freqs, g] = cleanline(varargin)
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-EEG = arg_extract(varargin,'EEG',[],[]);
-
 if isempty(EEG)
     EEG = eeg_emptyset;
 end
@@ -150,7 +148,6 @@ else
 end
 
 g = arg_define([0 1], varargin, ...
-    arg_norep('EEG',mandatory), ...
     arg({'linefreqs','LineFrequencies'}, 60, [],'Line noise frequencies to remove.'),...
     arg({'scanforlines','ScanForLines'},false,[],'Scan for line noise. This will scan for the exact line frequency in a narrow range around the specified LineFrequencies'),...
     arg({'p','LineAlpha','alpha'},0.01,[0 1],'p-value for detection of significant sinusoid'), ...
