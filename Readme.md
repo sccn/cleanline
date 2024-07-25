@@ -23,14 +23,21 @@ testing by Makoto Miyakoshi
 Installation of CleanLine is simple:
 
 1) download CleanLine (if you are reading this, you have probably already completed this step)
+
 2) Unzip the package and copy to <eeglabroot>/plugins/. Start eeglab from the Matlab command line.
    Alternately, you may add CleanLine (with subfolders) to your path and ensure EEGLAB is present 
    in the path.
+
 3) If using the EEGLAB GUI you may start CleanLine from Tools-->CleanLine.
    Alternately, you can start CleanLine from the command line
+
+```matlab
    >> EEGclean = pop_cleanline(EEG);
+```
+
    See "Command-line example" section below for command-line example and other parameters
-4) For Help, type 
+   
+5) For Help, type 
    >> doc cleanline
    Or, hold mouse over any textbox, checkbox, etc in the GUI for tooltip help text.
 
@@ -143,7 +150,7 @@ wish to set ('ComputeSpectralPower',false) which will speed up computation consi
 
 # Typical command-line example (Multiple trials)
 
-```
+```matlab
 % This will run cleanline on all channels, scanning for lines +/- 1 Hz around the 60 and 120 Hz frequencies. 
 % Each epoch will be cleaned individually and epochs containing lines that are significantly sinusoidal at 
 % the p<=0.01 level will be cleaned. 
