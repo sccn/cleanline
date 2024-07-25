@@ -1,3 +1,4 @@
+# CleanLine
 
 Welcome to the CleanLine plugin for EEGLAB! 
 
@@ -11,17 +12,13 @@ Toolbox (www.chronux.org).
 CleanLine also makes use of the arg() functionality from Christian Kothe's BCILAB toolbox 
 (sccn.ucsd.edu/wiki/BCILAB)
 
-----------------------------------------------------------------------------------------------------
-CLEAN LINE VERSIONS
-----------------------------------------------------------------------------------------------------
+# CleanLine versions
 V1 - Original version by Tim Mullen
 
 V2 - Include a rewrite by Kay Robbins with integration by Arnaud Delorme and 
 testing by Makoto Miyakoshi
 
-----------------------------------------------------------------------------------------------------
-INSTALLATION INSTRUCTIONS
-----------------------------------------------------------------------------------------------------
+# Instalation
 
 Installation of CleanLine is simple:
 
@@ -38,9 +35,7 @@ Installation of CleanLine is simple:
    Or, hold mouse over any textbox, checkbox, etc in the GUI for tooltip help text.
 
 
-----------------------------------------------------------------------------------------------------
-THEORY
-----------------------------------------------------------------------------------------------------
+# Theory
 
 Sinusoidal noise can be a prominent artifact in recorded electrophysiological data. This can stem 
 from AC power line fluctuations (e.g. 50/60 Hz line noise + harmonics), power suppliers (e.g. in 
@@ -78,8 +73,7 @@ and amplitude of the sinusoidal noise components (which typically change over th
 session). The discontinuity at the point of window overlap can be smoothed using a sigmoidal function.
 The example below demonstrates such a function for different smoothing factors (slope of the sigmoid).
 
-Begin Matlab Source -------------------------------------------------------------------------------
-
+```matlab
 winsize = 4;                        % window length in seconds
 winstep = 2;                        % window step in seconds (50% overlap)
 Fs      = 128;                      % sampling rate
@@ -108,9 +102,7 @@ hold off;
 xlabel('Time (sec)'); ylabel('Smoothing weight'); 
 title('Plot of window overlap smoothing function vs. time for different smoothing factors');
 legend(h,[{'Window 1','Window 2','Overlap'},cellstr(num2str(tau))']);
-
-End Matlab Source ---------------------------------------------------------------------------------
-
+```
 
 The smoothing factor is determined by the 'SmoothingFactor' parameter in cleanline().
 
@@ -124,9 +116,7 @@ only required parameter. If the 'Verbosity' option is set to 1, then CleanLine w
 parameters in the command line on execution of the function.
 
 
-----------------------------------------------------------------------------------------------------
-TIPS ON RUNNING CLEANLINE
-----------------------------------------------------------------------------------------------------
+# Tips on running CleanLine
 
 The default options should work quite well, but parameters may need to be tweaked depending on the setup. 
 If you have multiple epochs you need to make sure that your window size and step size exactly divides the 
@@ -151,23 +141,17 @@ is enabled. If you don't care to see the visualize the final results of the clea
 wish to set ('ComputeSpectralPower',false) which will speed up computation considerably.
 
 
-----------------------------------------------------------------------------------------------------
-TYPICAL COMMAND-LINE EXAMPLE (Multiple trials)
-----------------------------------------------------------------------------------------------------
+# Typical command-line example (Multiple trials)
 
+```
 % This will run cleanline on all channels, scanning for lines +/- 1 Hz around the 60 and 120 Hz frequencies. 
 % Each epoch will be cleaned individually and epochs containing lines that are significantly sinusoidal at 
 % the p<=0.01 level will be cleaned. 
 
 EEG = pop_cleanline(EEG, 'Bandwidth',2,'ChanCompIndices',[1:EEG.nbchan] ,'SignalType','Channels','ComputeSpectralPower',true,'LineFrequencies',[60 120] ,'NormalizeSpectrum',false,'LineAlpha',0.01,'PaddingFactor',2,'PlotFigures',false,'ScanForLines',true,'SmoothingFactor',100,'VerbosityLevel',1,'SlidingWinLength',EEG.pnts/EEG.srate,'SlidingWinStep',EEG.pnts/EEG.srate);
+```
 
-
-
-----------------------------------------------------------------------------------------------------
-DOC FILE FOR cleanline.m  (These can also be passed to pop_cleanline)
-----------------------------------------------------------------------------------------------------
-
-
+# Help for cleanline.m (These can also be passed to pop_cleanline)
 
   Mandatory             Information
   --------------------------------------------------------------------------------------------------
