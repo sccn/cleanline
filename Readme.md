@@ -32,13 +32,17 @@ Installation of CleanLine is simple:
    Alternately, you can start CleanLine from the command line
 
 ```matlab
-   >> EEGclean = pop_cleanline(EEG);
+EEGclean = pop_cleanline(EEG);
 ```
 
    See "Command-line example" section below for command-line example and other parameters
    
-5) For Help, type 
-   >> doc cleanline
+5) For Help, type
+
+```matlab
+doc cleanline
+```
+
    Or, hold mouse over any textbox, checkbox, etc in the GUI for tooltip help text.
 
 
