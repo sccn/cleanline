@@ -153,13 +153,7 @@ EEG = pop_cleanline(EEG, 'Bandwidth',2,'ChanCompIndices',[1:EEG.nbchan] ,'Signal
 
 # Help for cleanline.m (These can also be passed to pop_cleanline)
 
-  Mandatory             Information
-  --------------------------------------------------------------------------------------------------
-  EEG                   EEGLAB data structure
-  --------------------------------------------------------------------------------------------------
- 
-  Optional              Information
-  --------------------------------------------------------------------------------------------------
+## Function input
   LineFrequencies:      Line noise frequencies to remove                                                                      
                         Input Range  : Unrestricted                                                                           
                         Default value: 60  120                                                                                
@@ -245,9 +239,7 @@ EEG = pop_cleanline(EEG, 'Bandwidth',2,'ChanCompIndices',[1:EEG.nbchan] ,'Signal
                         Default value: false                                                                                      
                         Input Data Type: boolean  
  
-  --------------------------------------------------------------------------------------------------
-  Output                Information
-  --------------------------------------------------------------------------------------------------
+##  Output                Information
   EEG                   Cleaned EEG dataset
   Sorig                 Original multitaper spectrum for each component/channel
   Sclean                Cleaned multitaper spectrum for each component/channel
