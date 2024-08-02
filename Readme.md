@@ -1,4 +1,4 @@
-![Screenshot 2024-08-02 at 09 13 11](https://github.com/user-attachments/assets/b06e9423-9941-4911-9765-2d1ff550fbc5)
+![Screenshot 2024-08-02 at 09 14 11](https://github.com/user-attachments/assets/4e5be390-d091-4bdf-9ddc-e6fff8b692bb)
 
 # CleanLine
 
