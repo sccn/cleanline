@@ -1,3 +1,5 @@
+![Screenshot 2024-08-02 at 09 13 11](https://github.com/user-attachments/assets/b06e9423-9941-4911-9765-2d1ff550fbc5)
+
 # CleanLine
 
 Welcome to the CleanLine plugin for EEGLAB! 
@@ -11,12 +13,6 @@ Toolbox (www.chronux.org).
 
 CleanLine also makes use of the arg() functionality from Christian Kothe's BCILAB toolbox 
 (sccn.ucsd.edu/wiki/BCILAB)
-
-# CleanLine versions
-V1 - Original version by Tim Mullen
-
-V2 - Include a rewrite by Kay Robbins with integration by Arnaud Delorme and 
-testing by Makoto Miyakoshi
 
 # Instalation
 
@@ -267,6 +263,11 @@ amplitude amps{i})
   **g**                     Parameter structure. Function call can be replicated exactly by calling >> cleanline(EEG,g);
 
 
+# CleanLine versions
+V1 - Original version by Tim Mullen
+
+V2 - Include a rewrite by Kay Robbins with integration by Arnaud Delorme and 
+testing by Makoto Miyakoshi
 
 
 
