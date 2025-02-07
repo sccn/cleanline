@@ -136,7 +136,7 @@ catch
 end
 [outs,dummy,okpressed] = inputgui('geometry',geometry, 'uilist',uilist,'helpcom',['env_doc ' helptopic], 'title',dialogtitle,'geomvert',geomvert); %#ok<ASGLU>
 
-if ~isempty(okpressed)
+if ~isempty(okpressed) || (isempty(okpressed) && ~ischar(okpressed))
 
     % remove blanks from the spec
     spec = spec(~cellfun('isempty',spec));

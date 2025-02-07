@@ -269,7 +269,6 @@ V1 - Original version by Tim Mullen
 V2 - Include a rewrite by Kay Robbins with integration by Arnaud Delorme and 
 testing by Makoto Miyakoshi
 
-
-
+V2.1 - Fix menu returning automatically in EEGLAB 2024.0 and 2024.1
 
 
