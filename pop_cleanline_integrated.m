@@ -63,6 +63,17 @@ lineNoise = struct('lineNoiseMethod','clean', ...
     'tau',g.tau,'pad',g.pad,'fPassBand',[0 EEG.srate/2], ...
     'maximumIterations',10,'executionMode',executionMode, ...
     'showProgress',showProgress);
+if strcmp(executionMode,'parallel')
+    pool = gcp('nocreate');
+    if isempty(pool)
+        try
+            parpool;
+        catch ME
+            error('CleanLine:ParallelPool', ...
+                'Could not start MATLAB parallel pool: %s',ME.message);
+        end
+    end
+end
 clock = tic;
 [EEGclean,effective] = cleanline_optimized.cleanLineNoise(EEG,lineNoise);
 report = struct('implementation',implementation, ...
