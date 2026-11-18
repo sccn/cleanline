@@ -281,7 +281,7 @@ The [CleanLine GPT-6 Optimized project](https://github.com/MakotoMiyakoshi/Clean
 
 - Compute the fixed F-test critical value (`finv`) once per invocation instead of repeatedly within the moving-window calculations.
 - Reuse the frequency grid, selected frequency-bin indices, and taper sums across sliding windows. The detection threshold, harmonic selection, iteration limit, sinusoid fitting, and overlap smoothing are unchanged.
-- Provide explicit **Original/Optimized** and **Serial/Parallel** choices and a consolidated settings dialog in the standalone candidate. These interface features are subject to integration with the existing official CleanLine GUI and API.
+- Provide an explicit Optimized V2 Serial/Parallel choice in the official plugin's single CleanLine settings dialog. Historical V1 and Original V2 remain selectable.
 
 **Attribution:** Channel-level `parfor` was already present in [Kay Robbins' PREP implementation in 2014](https://github.com/VisLab/EEG-Clean-Tools/commit/a37f73be8675b6670df9c749ba1a9eeeaa4b0b96) and was [integrated into official CleanLine V2 in 2020](https://github.com/sccn/cleanline/commit/294a6178157cd77fec25fcbb7e7ad2175076a60f) by Arnaud Delorme. Parallel execution is **not** a new algorithmic optimization in this update.
 
@@ -315,3 +315,36 @@ These are results from the **validated standalone V2 candidate**; they do not es
 - [Full numerical validation report](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/docs/VALIDATION_REPORT_20261118.md)
 - [Runnable original-vs-optimized / installed-V2 comparison test](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/tests/test_cleanline_gpt6_full_parity.m)
 - [Raw timing measurements](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/benchmarks/raw_runs.csv)
+
+### Official `v2-optimized` integration
+
+The official branch now registers one **Tools → CleanLine** menu item and
+offers Historical V1, Original V2, and Optimized V2 in a single settings
+window. The original `pop_cleanline` and `cleanline` entry points, command
+arguments, V1 ICA component cleaning, V2 implementation, copyright notices,
+and `license.txt` remain available. The optimized engine uses the plugin's
+existing Chronux helpers. V2 cleans continuous channel data; select V1 for
+ICA components. Parallel execution of Optimized V2 requires Parallel
+Computing Toolbox.
+
+The new scriptable entry point is:
+
+```matlab
+[EEGclean, com, report] = pop_cleanline_integrated(EEG, ...
+    'Implementation','optimized', 'ExecutionMode','serial', ...
+    'LineFrequencies',60, 'ChanCompIndices',1:EEG.nbchan, ...
+    'SlidingWinLength',4, 'SlidingWinStep',1, ...
+    'Bandwidth',2, 'TaperBandWidth',2, 'LineAlpha',0.01, ...
+    'PaddingFactor',2, 'SmoothingFactor',100);
+```
+
+Existing calls to `pop_cleanline(EEG,...)` and their EEGLAB history remain
+compatible. The [new integration results](docs/INTEGRATION_VALIDATION.md)
+separate this branch's tests from the standalone measurements above.
+
+Set `CLEANLINE_EEGLAB_ROOT` to your EEGLAB installation and run
+`run('tests/test_cleanline_integration.m')` from this plugin folder. For the
+adapted 5- and 30-minute official V2 comparison, set `CLEANLINE_TEST_SET` to
+a continuous `.set` file with at least 33 channels and 30 minutes of data,
+then run `run('tests/test_cleanline_gpt6_full_parity.m')`. The dataset is not
+included in this repository.

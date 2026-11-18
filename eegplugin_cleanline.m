@@ -55,7 +55,7 @@ function vers = eegplugin_cleanline(fig, trystrs, catchstrs)
     
     % menu callbacks
     % --------------
-    comcnt = [ trystrs.no_check '[EEG LASTCOM] = pop_cleanline(EEG);' catchstrs.new_and_hist ];
+    comcnt = [ trystrs.no_check '[EEG LASTCOM] = pop_cleanline_integrated(EEG);' catchstrs.new_and_hist ];
     
     % create menus
     % ------------
