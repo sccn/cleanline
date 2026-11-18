@@ -296,7 +296,16 @@ Measured on the same **33-channel, 256-Hz EEG** recording with MATLAB R2024b Upd
 
 The **source-code changes alone** improved matched Serial performance by **1.28–1.29×** and matched Parallel performance by **1.12–1.15×**. Comparing Original Serial with Optimized Parallel yields an **overall 3.76× speedup at 5 min and 4.15× at 30 min**, including the pre-existing benefit of parallel processing. The 5- and 30-minute values are medians of three measured runs per condition.
 
-### Numerical equivalence and tests
+### Numerical validation
+
+The following table reproduces the output-difference results reported in the [original optimization README](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized#numerical-validation). The reference is **Original CleanLine 2.00 V2** (`newversion=1`), using the same EEG data, settings, and execution mode for each matched comparison.
+
+| Comparison against Original V2 | Maximum absolute error | Relative L2 error | Equality |
+| --- | ---: | ---: | --- |
+| 33-channel cleaned EEG, all 5–30 min parallel runs | 0 | 0 | Exact sample equality |
+| 33-channel removed line noise, all 5–30 min parallel runs | 0 | 0 | Exact sample equality |
+| 33-channel cleaned EEG, all 5–30 min serial runs | 0 | 0 | Exact sample equality |
+| 33-channel removed line noise, all 5–30 min serial runs | 0 | 0 | Exact sample equality |
 
 The separately tested standalone candidate was compared with CleanLine **2.00 V2** using identical input EEG and processing parameters. Over the tested **5-, 10-, 15-, 20-, 25-, and 30-minute** recording lengths, the optimized and original implementations produced **exactly equal cleaned samples and removed line-noise samples** in both Serial and Parallel modes (**maximum absolute error = 0; relative L2 error = 0**). Direct comparisons with the installed public CleanLine V2 on 33-channel **5- and 30-minute** inputs likewise reported exact output equality and preserved event metadata. Five deterministic synthetic test cases also matched exactly in the reported waveform and detection quantities.
 
