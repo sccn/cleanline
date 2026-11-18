@@ -271,6 +271,8 @@ testing by Makoto Miyakoshi
 
 V2.1 - Fix menu returning automatically in EEGLAB 2024.0 and 2024.1
 
+V2.2 - Integrate computationally optimized CleanLine V2 with selectable Serial/Parallel execution, automatic parallel-pool initialization, and a unified settings GUI. Preserve the original V1/V2 implementations and backward compatibility.
+
 ---
 
 ## CleanLine V2 optimization and validation (November 2026)
