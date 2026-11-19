@@ -271,4 +271,86 @@ testing by Makoto Miyakoshi
 
 V2.1 - Fix menu returning automatically in EEGLAB 2024.0 and 2024.1
 
+V2.2 - Integrate computationally optimized CleanLine V2 with selectable Serial/Parallel execution, automatic parallel-pool initialization, and a unified settings GUI. Preserve the original V1/V2 implementations and backward compatibility.
 
+---
+
+## CleanLine V2 optimization and validation (November 2026)
+
+The [CleanLine GPT-6 Optimized project](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized), led by Makoto Miyakoshi with GPT-6 programming assistance, provides a computationally optimized implementation of **Kay Robbins' CleanLine V2** (`newversion=1`). The optimization does **not** change the line-noise removal method or claim a new signal-processing algorithm.
+
+### Changes
+
+- Compute the fixed F-test critical value (`finv`) once per invocation instead of repeatedly within the moving-window calculations.
+- Reuse the frequency grid, selected frequency-bin indices, and taper sums across sliding windows. The detection threshold, harmonic selection, iteration limit, sinusoid fitting, and overlap smoothing are unchanged.
+- Provide an explicit Optimized V2 Serial/Parallel choice in the CleanLine settings dialog and retain programmatic access to all three engines.
+
+**Attribution:** Channel-level `parfor` was already present in [Kay Robbins' PREP implementation in 2014](https://github.com/VisLab/EEG-Clean-Tools/commit/a37f73be8675b6670df9c749ba1a9eeeaa4b0b96) and was [integrated into official CleanLine V2 in 2020](https://github.com/sccn/cleanline/commit/294a6178157cd77fec25fcbb7e7ad2175076a60f) by Arnaud Delorme. Parallel execution is **not** a new algorithmic optimization in this update.
+
+### Execution-time measurements
+
+Measured on the same **33-channel, 256-Hz EEG** recording with MATLAB R2024b Update 3, EEGLAB 2024.0, Windows 11, and an Intel Core i9-10900K. Parallel tests used a pre-started pool of **eight workers**; the measured **12.08-second pool startup** was excluded. All values below are elapsed processing times, excluding data loading and saving.
+
+| Recording | Original serial | Optimized serial | Original parallel | Optimized parallel |
+| --- | ---: | ---: | ---: | ---: |
+| 5 min | 51.47 s | 40.00 s | 15.28 s | 13.69 s |
+| 30 min | 289.94 s | 226.85 s | 80.43 s | 69.94 s |
+
+The **source-code changes alone** improved matched Serial performance by **1.28–1.29×** and matched Parallel performance by **1.12–1.15×**. Comparing Original Serial with Optimized Parallel yields an **overall 3.76× speedup at 5 min and 4.15× at 30 min**, including the pre-existing benefit of parallel processing. The 5- and 30-minute values are medians of three measured runs per condition.
+
+### Numerical validation
+
+The following table reproduces the output-difference results reported in the [original optimization README](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized#numerical-validation). The reference is **Original CleanLine 2.00 V2** (`newversion=1`), using the same EEG data, settings, and execution mode for each matched comparison.
+
+| Comparison against Original V2 | Maximum absolute error | Relative L2 error | Equality |
+| --- | ---: | ---: | --- |
+| 33-channel cleaned EEG, all 5–30 min parallel runs | 0 | 0 | Exact sample equality |
+| 33-channel removed line noise, all 5–30 min parallel runs | 0 | 0 | Exact sample equality |
+| 33-channel cleaned EEG, all 5–30 min serial runs | 0 | 0 | Exact sample equality |
+| 33-channel removed line noise, all 5–30 min serial runs | 0 | 0 | Exact sample equality |
+
+The separately tested standalone candidate was compared with CleanLine **2.00 V2** using identical input EEG and processing parameters. Over the tested **5-, 10-, 15-, 20-, 25-, and 30-minute** recording lengths, the optimized and original implementations produced **exactly equal cleaned samples and removed line-noise samples** in both Serial and Parallel modes (**maximum absolute error = 0; relative L2 error = 0**). Direct comparisons with the installed public CleanLine V2 on 33-channel **5- and 30-minute** inputs likewise reported exact output equality and preserved event metadata. Five deterministic synthetic test cases also matched exactly in the reported waveform and detection quantities.
+
+These are results from the **validated standalone V2 candidate**; they do not establish exhaustive equivalence for all data and settings, nor do they substitute for testing the final upstream-integrated plugin, including historical V1 and ICA-component functionality.
+
+- [Complete optimization report and benchmark methodology](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized#benchmark-method)
+- [Full numerical validation report](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/docs/VALIDATION_REPORT_20261118.md)
+- [Runnable original-vs-optimized / installed-V2 comparison test](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/tests/test_cleanline_gpt6_full_parity.m)
+- [Raw timing measurements](https://github.com/MakotoMiyakoshi/CleanLine-GPT6-Optimized/blob/main/benchmarks/raw_runs.csv)
+
+### Official `v2-optimized` integration
+
+**Tools → CleanLine** opens the V2.1 settings dialog. With **Use old version**
+unchecked, the dialog runs Optimized V2.2 in Serial mode by default. Checking
+it selects Historical V1. Original V2 is available through
+`pop_cleanline(...,'Newversion',true)` or
+`pop_cleanline_integrated(...,'Implementation','original')`.
+
+Optimized V2.2 cleans channels in continuous and epoched data. On ICA
+datasets, choose the old version and select **Components** for component
+cleaning. Optimized V2.2 uses the scan bandwidth and ignores the original
+**Scan for line noise** toggle. The spectrum visualization, normalization,
+verbose output, and individual plot controls apply to Historical V1.
+Parallel execution of Optimized V2.2 requires Parallel Computing Toolbox.
+
+The new scriptable entry point is:
+
+```matlab
+[EEGclean, com, report] = pop_cleanline_integrated(EEG, ...
+    'Implementation','optimized', 'ExecutionMode','serial', ...
+    'LineFrequencies',60, 'ChanCompIndices',1:EEG.nbchan, ...
+    'SlidingWinLength',4, 'SlidingWinStep',1, ...
+    'Bandwidth',2, 'TaperBandWidth',2, 'LineAlpha',0.01, ...
+    'PaddingFactor',2, 'SmoothingFactor',100);
+```
+
+Existing calls to `pop_cleanline(EEG,...)` and their EEGLAB history remain
+compatible. The [new integration results](docs/INTEGRATION_VALIDATION.md)
+separate this branch's tests from the standalone measurements above.
+
+Set `CLEANLINE_EEGLAB_ROOT` to your EEGLAB installation and run
+`run('tests/test_cleanline_integration.m')` from this plugin folder. For the
+adapted 5- and 30-minute official V2 comparison, set `CLEANLINE_TEST_SET` to
+a continuous `.set` file with at least 33 channels and 30 minutes of data,
+then run `run('tests/test_cleanline_gpt6_full_parity.m')`. The dataset is not
+included in this repository.
