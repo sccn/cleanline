@@ -1,117 +1,76 @@
 function [args, accepted] = cleanline_integrated_dialog(EEG)
-%CLEANLINE_INTEGRATED_DIALOG Modal settings for all CleanLine engines.
-% Layout follows BLASST Standalone's +blasstdispatch/settingsDialog.m.
-
-eeGLABBackground = [0.66 0.76 1];
-eeGLABForeground = [0 0 0.4];
-eeGLABInputForeground = [0 0 0];
-eeGLABButtonBackground = [0.93 0.96 1];
-
-labels = {'Implementation:', 'Execution mode (Optimized V2):', 'Signal type:', ...
-    'Line frequencies (Hz):', 'Channel/component indices:', 'F-test p value:', ...
-    'Scan bandwidth (Hz):', 'Taper bandwidth (Hz):', 'Window length (s):', ...
-    'Window step (s):', 'Smoothing factor:', 'FFT padding:'};
-choices = {{'Optimized V2','Original V2','Historical V1'}, ...
-    {'Serial','Parallel'}, {'Channels','Components'}};
-defaults = {'60',sprintf('1:%d',EEG.nbchan),'0.01','2','2','4','1','100','2'};
-if EEG.trials > 1
-    epochSeconds = sprintf('%.17g',EEG.pnts/EEG.srate);
-    defaults(6:7) = {epochSeconds,epochSeconds};
-end
-
-screen = get(0,'ScreenSize');
-width = min(715,screen(3)-24);
-height = min(1020,screen(4)-80);
-left = round(screen(1)+(screen(3)-width)/2);
-bottom = round(screen(2)+(screen(4)-height)/2);
-fig = dialog('Name','CleanLine','Units','pixels', ...
-    'Position',[left bottom width height],'Resize','off','WindowStyle','modal', ...
-    'Color',eeGLABBackground,'Tag','CleanLineSettingsDialog', ...
-    'CloseRequestFcn',@(src,~) uiresume(src));
-
-% Keep BLASST's dimensions where they fit. Tighten the vertical spacing
-% on shorter displays while keeping the same font and single column.
-rowPitch = min(67,(height-180)/numel(labels));
-labelHeight = min(22,floor(0.39*rowPitch));
-inputHeight = min(30,floor(0.52*rowPitch));
-topMargin = min(26,max(8,floor(0.39*rowPitch)-8));
-fields = gobjects(1,numel(labels));
-for k = 1:numel(labels)
-    y = round(height-topMargin-labelHeight-(k-1)*rowPitch);
-    uicontrol(fig,'Style','text','String',labels{k}, ...
-        'Units','pixels','Position',[20 y width-40 labelHeight], ...
-        'BackgroundColor',eeGLABBackground,'ForegroundColor',eeGLABForeground, ...
-        'HorizontalAlignment','left','FontSize',10);
-    if k <= numel(choices)
-        style = 'popupmenu';
-        contents = choices{k};
-    else
-        style = 'edit';
-        contents = defaults{k-numel(choices)};
-    end
-    fields(k) = uicontrol(fig,'Style',style,'String',contents, ...
-        'Units','pixels','Position',[20 y-inputHeight-4 width-40 inputHeight], ...
-        'BackgroundColor','white','ForegroundColor',eeGLABInputForeground, ...
-        'HorizontalAlignment','left','FontSize',10,'Tag',sprintf('CleanLineSetting%d',k));
-end
-
-uicontrol(fig,'Style','text','String','Reference', ...
-    'Units','pixels','Position',[20 152 width-40 21], ...
-    'BackgroundColor',eeGLABBackground,'ForegroundColor',eeGLABForeground, ...
-    'HorizontalAlignment','left','FontWeight','bold','FontSize',10);
-references = {'Mullen (2012), CleanLine, NITRC.', ...
-    'Bigdely-Shamlo et al. (2015), Front Neuroinform 9:16. DOI: 10.3389/fninf.2015.00016', ...
-    'Maruyama et al. (2026), Cortex. DOI: 10.1016/j.cortex.2026.11.005'};
-for k = 1:numel(references)
-    uicontrol(fig,'Style','text','String',references{k}, ...
-        'Units','pixels','Position',[20 152-24*k width-40 20], ...
-        'BackgroundColor',eeGLABBackground,'ForegroundColor',eeGLABForeground, ...
-        'HorizontalAlignment','left','FontSize',10);
-end
-
-uicontrol(fig,'Style','pushbutton','String','OK', ...
-    'Units','pixels','Position',[width-185 16 78 35], ...
-    'BackgroundColor',eeGLABButtonBackground,'ForegroundColor',eeGLABForeground, ...
-    'FontSize',10,'Callback',@(~,~) acceptSettings(fig,fields));
-uicontrol(fig,'Style','pushbutton','String','Cancel', ...
-    'Units','pixels','Position',[width-96 16 78 35], ...
-    'BackgroundColor',eeGLABButtonBackground,'ForegroundColor',eeGLABForeground, ...
-    'FontSize',10,'Callback',@(~,~) uiresume(fig));
+%CLEANLINE_INTEGRATED_DIALOG Show V2.1 settings with the V2.2 engine choices.
+% Only dataset fields consumed by cleanline_check need to pass through the
+% argument dialog's initial and final validation.
+dataset = struct('nbchan',EEG.nbchan,'trials',EEG.trials, ...
+    'pnts',EEG.pnts,'srate',EEG.srate,'icawinv',EEG.icawinv);
+g = arg_guidialog(@dialogSettings,'Parameters',{'EEG',dataset}, ...
+    'Title','CleanLine Options','Invoke',false);
 
 args = {};
-accepted = false;
-uiwait(fig);
-if isgraphics(fig)
-    if isappdata(fig,'CleanLineArguments')
-        args = getappdata(fig,'CleanLineArguments');
-        accepted = true;
+accepted = ~isempty(g);
+if ~accepted
+    return
+end
+
+implementation = 'optimized';
+if g.useoldversion
+    implementation = 'legacy';
+else
+    % Keep the historical V2 notices for settings exposed by this dialog.
+    if g.normSpectrum
+        disp('Warning: spectrum normalization ignored; use the old version for this option');
     end
-    delete(fig);
-end
+    if g.plotfigures
+        disp('Warning: plotting option ignored; use the old version for this option');
+    end
+    if g.scanforlines
+        disp('Warning: Scan for lines checkbox ignored; Optimized V2.2 uses the scan bandwidth');
+    end
 end
 
-function acceptSettings(fig,fields)
-try
-    frequency = str2num(get(fields(4),'String')); %#ok<ST2NM>
-    channels = str2num(get(fields(5),'String')); %#ok<ST2NM>
-    numeric = arrayfun(@(field) str2double(get(field,'String')),fields(6:end));
-    assert(~isempty(frequency) && ~isempty(channels) && ...
-        all(isfinite(numeric)),'Enter valid numeric settings.');
-
-    implementations = {'optimized','original','legacy'};
-    executionModes = {'serial','parallel'};
-    signalTypes = {'Channels','Components'};
-    args = {'Implementation',implementations{get(fields(1),'Value')}, ...
-        'ExecutionMode',executionModes{get(fields(2),'Value')}, ...
-        'SignalType',signalTypes{get(fields(3),'Value')}, ...
-        'LineFrequencies',frequency,'ChanCompIndices',channels, ...
-        'LineAlpha',numeric(1),'Bandwidth',numeric(2), ...
-        'TaperBandWidth',numeric(3),'SlidingWinLength',numeric(4), ...
-        'SlidingWinStep',numeric(5),'SmoothingFactor',numeric(6), ...
-        'PaddingFactor',numeric(7)};
-    setappdata(fig,'CleanLineArguments',args);
-    uiresume(fig);
-catch err
-    errordlg(err.message,'CleanLine settings');
+if EEG.trials > 1
+    % arg_guidialog shows numeric defaults with 15 significant digits.
+    % Restore the full epoch duration when either field retains that value.
+    epochSeconds = EEG.pnts/EEG.srate;
+    displayedSeconds = str2double(hlp_tostring(epochSeconds));
+    if isequal(g.winsize,displayedSeconds)
+        g.winsize = epochSeconds;
+    end
+    if isequal(g.winstep,displayedSeconds)
+        g.winstep = epochSeconds;
+    end
 end
+
+args = [{'Implementation',implementation,'ExecutionMode',lower(g.executionmode)}, ...
+    hlp_struct2varargin(g,'suppress',{'EEG','arg_direct','executionmode','useoldversion'})];
+end
+
+function g = dialogSettings(varargin)
+dataset = arg_extract(varargin,'EEG',[],[]);
+g = arg_define(0,varargin,arg_nogui('EEG',mandatory),{@dialogSpec,{dataset}});
+end
+
+function spec = dialogSpec(reportType,dataset)
+% Start from the stock V2.1 definitions. Channels is a compatible default
+% for Optimized V2.2, with the original ICA-dependent choices left visible.
+spec = arg_report(reportType,@cleanline_check,{'EEG',dataset,'SignalType','Channels'});
+names = cellfun(@(aliases) aliases{1},{spec.names},'UniformOutput',false);
+% The bundled BCILAB subset can lack PropertyType's type inference.
+[spec(cellfun(@islogical,{spec.value})).type] = deal('logical');
+spec(strcmp(names,'sigtype')).type = 'char';
+power = strcmp(names,'computepower');
+spec(power).help{2} = [spec(power).help{2} '. This option applies to the old version.'];
+spec(strcmp(names,'verb')).help{2} = 'This option controls the old version''s progress output.';
+spec(strcmp(names,'newversion')) = [];
+
+mode = arg('executionmode','Serial',{'Serial','Parallel'}, ...
+    {'Optimized V2.2 execution mode','Applies when Use old version is unchecked. Serial is the default.'}, ...
+    'type','char');
+oldVersion = arg('useoldversion',false,[], ...
+    {'Use old version','Unchecked runs Optimized V2.2 (default). Checked runs Historical V1.'}, ...
+    'type','logical');
+spec = [spec mode{1}(reportType,mode{2}{:}) oldVersion{1}(reportType,oldVersion{2}{:})];
+% The mandatory checkbox label is longer than arg's summary length limit.
+spec(end).help{1} = 'Use old version (CAUTION! There is a known bug, test use only)';
 end

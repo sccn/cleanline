@@ -1,5 +1,5 @@
 function [EEGclean, commstr, report] = pop_cleanline_integrated(EEG, varargin)
-%POP_CLEANLINE_INTEGRATED One-menu selector for historical V1 and both V2 engines.
+%POP_CLEANLINE_INTEGRATED CleanLine settings dialog and scriptable engine selection.
 % Original pop_cleanline and its command history remain supported unchanged.
 % Usage: [EEG,com] = pop_cleanline_integrated(EEG, ...
 %     'Implementation','optimized','ExecutionMode','serial', ...
@@ -7,7 +7,8 @@ function [EEGclean, commstr, report] = pop_cleanline_integrated(EEG, varargin)
 EEGclean = EEG;
 commstr = '';
 report = struct();
-if isempty(varargin)
+fromDialog = isempty(varargin);
+if fromDialog
     [varargin, accepted] = cleanline_integrated_dialog(EEG);
     if ~accepted, return; end
 end
@@ -32,12 +33,10 @@ assert(ismember(implementation,{'legacy','original','optimized'}), ...
 assert(ismember(executionMode,{'serial','parallel'}), ...
     'ExecutionMode must be serial or parallel.');
 if ~strcmp(implementation,'optimized')
-    if strcmp(implementation,'legacy')
-        args = [args {'Newversion',false}];
-    else
-        args = [args {'Newversion',true}];
+    [EEGclean,commstr] = pop_cleanline(EEG,args{:},'Newversion',strcmp(implementation,'original'));
+    if fromDialog
+        commstr = historyCommand(implementation,executionMode,args);
     end
-    [EEGclean,commstr] = pop_cleanline(EEG,args{:});
     report = struct('implementation',implementation, ...
         'executionMode','official','historyCommand',commstr);
     return
@@ -78,9 +77,14 @@ clock = tic;
 report = struct('implementation',implementation, ...
     'executionMode',executionMode,'effectiveLineFrequencies', ...
     effective.lineFrequencies,'elapsedCoreSeconds',toc(clock));
-% Serialize caller options, including the selected mode, for EEGLAB replay.
+commstr = historyCommand(implementation,executionMode,args);
+report.historyCommand=commstr;
+end
+
+function commstr = historyCommand(implementation,executionMode,args)
+% Keep full numeric precision for EEGLAB replay, including fractional epochs.
 serialized = cell(1,numel(args)+4);
-serialized(1:4) = {'''Implementation''','''optimized''', ...
+serialized(1:4) = {'''Implementation''',['''' implementation ''''], ...
     '''ExecutionMode''',['''' executionMode '''']};
 for k=1:2:numel(args)
     serialized{k+4}=['''' char(args{k}) ''''];
@@ -88,9 +92,8 @@ for k=1:2:numel(args)
     if ischar(value) || isstring(value)
         serialized{k+5}=['''' char(value) ''''];
     else
-        serialized{k+5}=mat2str(value);
+        serialized{k+5}=mat2str(value,17);
     end
 end
 commstr=['EEG = pop_cleanline_integrated(EEG, ' strjoin(serialized,', ') ');'];
-report.historyCommand=commstr;
 end

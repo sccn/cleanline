@@ -283,7 +283,7 @@ The [CleanLine GPT-6 Optimized project](https://github.com/MakotoMiyakoshi/Clean
 
 - Compute the fixed F-test critical value (`finv`) once per invocation instead of repeatedly within the moving-window calculations.
 - Reuse the frequency grid, selected frequency-bin indices, and taper sums across sliding windows. The detection threshold, harmonic selection, iteration limit, sinusoid fitting, and overlap smoothing are unchanged.
-- Provide an explicit Optimized V2 Serial/Parallel choice in the official plugin's single CleanLine settings dialog. Historical V1 and Original V2 remain selectable.
+- Provide an explicit Optimized V2 Serial/Parallel choice in the CleanLine settings dialog and retain programmatic access to all three engines.
 
 **Attribution:** Channel-level `parfor` was already present in [Kay Robbins' PREP implementation in 2014](https://github.com/VisLab/EEG-Clean-Tools/commit/a37f73be8675b6670df9c749ba1a9eeeaa4b0b96) and was [integrated into official CleanLine V2 in 2020](https://github.com/sccn/cleanline/commit/294a6178157cd77fec25fcbb7e7ad2175076a60f) by Arnaud Delorme. Parallel execution is **not** a new algorithmic optimization in this update.
 
@@ -320,14 +320,18 @@ These are results from the **validated standalone V2 candidate**; they do not es
 
 ### Official `v2-optimized` integration
 
-The official branch now registers one **Tools → CleanLine** menu item and
-offers Historical V1, Original V2, and Optimized V2 in a single settings
-window. The original `pop_cleanline` and `cleanline` entry points, command
-arguments, V1 ICA component cleaning, V2 implementation, copyright notices,
-and `license.txt` remain available. The optimized engine uses the plugin's
-existing Chronux helpers. V2 cleans continuous channel data; select V1 for
-ICA components. Parallel execution of Optimized V2 requires Parallel
-Computing Toolbox.
+**Tools → CleanLine** opens the V2.1 settings dialog. With **Use old version**
+unchecked, the dialog runs Optimized V2.2 in Serial mode by default. Checking
+it selects Historical V1. Original V2 is available through
+`pop_cleanline(...,'Newversion',true)` or
+`pop_cleanline_integrated(...,'Implementation','original')`.
+
+Optimized V2.2 cleans channels in continuous and epoched data. On ICA
+datasets, choose the old version and select **Components** for component
+cleaning. Optimized V2.2 uses the scan bandwidth and ignores the original
+**Scan for line noise** toggle. The spectrum visualization, normalization,
+verbose output, and individual plot controls apply to Historical V1.
+Parallel execution of Optimized V2.2 requires Parallel Computing Toolbox.
 
 The new scriptable entry point is:
 

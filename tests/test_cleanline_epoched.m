@@ -146,20 +146,20 @@ assert(isequal(direct.data(:,:,1),cleaned.data));
 fprintf('B/D PASS: direct call on 201-sample epochs at 129 Hz matched independent calls exactly.\n');
 fprintf('Warning PASS: one exact warning on direct epoched input, silence on continuous input.\n');
 
-% Invoke the dialog and accept its actual defaults via the OK callback.
-probe = timer('StartDelay',1,'ExecutionMode','fixedSpacing','Period',0.1, ...
-    'TimerFcn',@(source,~) acceptEpochDialog(source,win));
-removeProbe = onCleanup(@() delete(probe)); %#ok<NASGU>
-start(probe);
-[warningOutput,guiOutput,history,report] = evalc('pop_cleanline_integrated(EEG)');
+% Invoke the real dialog and accept its epoch-length defaults.
+[guiOutput,history,report,warningOutput] = drive_cleanline_test_dialog( ...
+    @() pop_cleanline_integrated(EEG),@(fig) checkEpochDefaults(fig,win),true);
 assertEpochedWarning(warningOutput,expectedWarning);
-assert(strcmp(probe.Running,'off'),'The dialog callback did not run.');
 assert(~isempty(history) && strcmp(report.implementation,'optimized') ...
     && strcmp(report.executionMode,'serial'));
 warning('off',warningId);
 explicit = pop_cleanline_integrated(EEG,'Implementation','optimized','LineFrequencies',60, ...
     'SlidingWinLength',win,'SlidingWinStep',win);
 assert(isequal(guiOutput.data,explicit.data));
+input = EEG;
+eval(history);
+assert(isequal(EEG.data,guiOutput.data),'Fractional epoch GUI history differs.');
+EEG = input;
 fprintf('Warning/D PASS: dialog defaults accepted, one exact warning, output identical to explicit settings.\n');
 
 tooShort = makeDataset(250,250,'single');
@@ -207,26 +207,12 @@ assert(count(output,'Applying CleanLine to epoched EEG is strongly discouraged.'
     'Expected one epoched warning per dataset invocation.');
 end
 
-function acceptEpochDialog(probe,epochSeconds)
-fig = findall(0,'Type','figure','Tag','CleanLineSettingsDialog');
-if isempty(fig) || ~strcmp(get(fig(1),'WaitStatus'),'waiting')
-    return
-end
-stop(probe);
-try
-    assert(isscalar(fig));
-    win = str2double(get(findobj(fig,'Tag','CleanLineSetting9'),'String'));
-    step = str2double(get(findobj(fig,'Tag','CleanLineSetting10'),'String'));
-    engine = get(findobj(fig,'Tag','CleanLineSetting1'),'Value');
-    assert(win==epochSeconds && step==epochSeconds && engine==1);
-    button = findobj(fig,'Style','pushbutton','String','OK');
-    callback = get(button,'Callback');
-    callback(button,[]);
-    assert(isappdata(fig,'CleanLineArguments'),'Dialog did not accept settings.');
-catch err
-    uiresume(fig(1));
-    rethrow(err);
-end
+function checkEpochDefaults(fig,epochSeconds)
+win = str2double(get(findobj(fig,'Tag','winsize'),'String'));
+step = str2double(get(findobj(fig,'Tag','winstep'),'String'));
+oldVersion = get(findobj(fig,'Tag','useoldversion'),'Value');
+displayedSeconds = str2double(hlp_tostring(epochSeconds));
+assert(win==displayedSeconds && step==displayedSeconds && oldVersion==0);
 end
 
 function assertError(invoke,identifier)
