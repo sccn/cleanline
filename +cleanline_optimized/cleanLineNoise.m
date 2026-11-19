@@ -114,14 +114,14 @@ if strcmpi(mode, 'parallel')
     end
     if isempty(chans) || all(diff(chans)==1)
         parfor ch = chans
-            data(ch,:,:) = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
+            data(ch,:,:) = cleanline_optimized.cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
             if showProgress, send(progressQueue,ch); end
         end
     else
         cleaned = cell(1,numel(chans));
         parfor k = 1:numel(chans)
             ch = chans(k);
-            cleaned{k} = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
+            cleaned{k} = cleanline_optimized.cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
             if showProgress, send(progressQueue,ch); end
         end
         for k = 1:numel(chans)
@@ -131,18 +131,10 @@ if strcmpi(mode, 'parallel')
 else
     for k = 1:numel(chans)
         ch = chans(k);
-        data(ch,:,:) = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
+        data(ch,:,:) = cleanline_optimized.cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
         if showProgress, waitbar(k/numel(chans),progressWindow); end
     end
 end
 if showProgress, drawnow; end
 signal.data = data;
-end
-
-function channelData = cleanChannelEpochs(channelData,lineNoise)
-% Restart the spectrum, iterative fits and overlap smoothing for each epoch.
-for trial = 1:size(channelData,3)
-    channelData(1,:,trial) = cleanline_optimized.removeLinesMovingWindow( ...
-        channelData(1,:,trial),lineNoise);
-end
 end
