@@ -64,3 +64,45 @@ Serial/Parallel equality for 2-, 4-, and 6-second epochs with both single-
 and double-precision input. The integrated dialog and the direct engine
 also passed with 201 samples at 129 Hz, where floating-point rounding can
 make the epoch duration appear shorter than its full-epoch window.
+
+## Multiple EEGLAB datasets (2026-11-19)
+
+`pop_cleanline_integrated` processes optimized datasets in linear array
+order using the single-dataset engine. Output and per-dataset reports follow
+the input shape. Each report includes that dataset's effective frequencies
+and core processing time. History replays the full array with the original
+options and full numeric precision.
+
+Omitted command-line settings are resolved on each dataset, including
+epoch-length windows and default channel indices. The GUI opens once using
+the first dataset and applies the accepted values to every dataset. Invalid
+batch settings report the affected dataset's linear index. Shared window
+settings must fit every selected recording or epoch, channel indices must
+exist on every dataset, and shared GUI frequencies must include a frequency
+below each dataset's Nyquist limit. Optimized batch channel selections must
+contain unique indices. With ICA datasets, specify `'SignalType','Channels'`
+for optimized command-line runs.
+
+Optimized batch calls require numeric samples in memory. The wrapper leaves
+file loading, saving, and EEGLAB storage preferences to the caller. The
+standard EEGLAB menu storage workflow still applies after the wrapper
+returns. Historical V1 and Original V2 use `pop_cleanline` and `eeg_eval`,
+including their existing storage and pool policy. Depending on preferences,
+`eeg_eval` can resave files and close a pool. The integrated wrapper passes
+nonvector arrays to that route as a linear vector because the installed
+`eeg_eval` iterates with `length`, then restores the original array shape.
+
+Ran the [multiple-dataset regression](../tests/test_cleanline_multiple_datasets.m)
+with MATLAB R2024b Update 3 and EEGLAB 2024.0. Fixture datasets used in-memory
+EEGLAB storage.
+
+| Check | Result |
+| --- | --- |
+| A. Continuous Serial, row, column and matrix inputs | Exact full-structure equality with independent calls. Max absolute sample error 0. |
+| B. Parallel and history replay | Samples match Serial exactly, max absolute error 0. Existing pool reused. |
+| C. Epoched and mixed inputs | Exact dataset and epoch isolation. Omitted and shared windows match their independent calls. Serial and Parallel agree, history replays fractional settings exactly, and each epoched dataset emits one warning. |
+| D. Heterogeneous inputs | Per-dataset Nyquist filtering and exact independent results across rates and channel counts. Indexed errors identify incompatible shared settings and unloaded samples. |
+| E. Historical compatibility | Historical V1 and Original V2 match official `pop_cleanline` vector calls exactly. Matrix calls agree with the official route after reshaping. |
+| F. GUI and history | One dialog per invocation. Optimized and Historical routes replay exactly, and Cancel returns the input array. |
+| G. Existing regression suites | `test_cleanline_dialog`, `test_cleanline_epoched`, and `test_cleanline_integration` passed. The synthetic continuous integration reported max absolute sample error 0 in both modes. |
+| G. Full continuous parity | `test_cleanline_gpt6_full_parity` passed on the 5- and 30-minute, 33-channel recordings. Optimized Serial and Parallel both matched Original V2 exactly, max absolute sample error 0. |

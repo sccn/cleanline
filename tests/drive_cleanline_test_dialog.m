@@ -2,13 +2,15 @@ function [output,history,report,console] = drive_cleanline_test_dialog(invoke,in
 % Exercise the real arg_guidialog controls and EEGLAB's modal return.
 probe = timer('StartDelay',2,'ExecutionMode','fixedSpacing','Period',0.1, ...
     'TimerFcn',@(source,~) finishDialog(source,inspect,accept));
-cleanup = onCleanup(@() delete(probe)); %#ok<NASGU>
+cleanup = onCleanup(@() deleteProbe(probe)); %#ok<NASGU>
+probe.UserData = struct('figure',[],'error',[]);
 start(probe);
 [console,output,history,report] = evalc('invoke()');
-if ~isempty(probe.UserData)
-    rethrow(probe.UserData);
+state = probe.UserData;
+if ~isempty(state.error)
+    rethrow(state.error);
 end
-assert(strcmp(probe.Running,'off'),'The CleanLine dialog was not exercised.');
+assert(~isempty(state.figure),'The CleanLine dialog was not exercised.');
 end
 
 function finishDialog(probe,inspect,accept)
@@ -20,9 +22,15 @@ ok = findobj(fig(1),'Tag','ok');
 if isempty(ok) || isempty(findobj(fig(1),'Tag','cancel'))
     return
 end
-stop(probe);
+state = probe.UserData;
+if isequal(state.figure,fig(1))
+    return
+end
 try
     assert(isscalar(fig));
+    assert(isempty(state.figure),'CleanLine opened the settings dialog more than once.');
+    state.figure = fig;
+    probe.UserData = state;
     inspect(fig);
     if accept
         % This is the OK callback's signal to EEGLAB's inputgui wait.
@@ -31,7 +39,13 @@ try
         close(fig);
     end
 catch err
-    probe.UserData = err;
+    state.error = err;
+    probe.UserData = state;
     close(fig(1));
 end
+end
+
+function deleteProbe(probe)
+stop(probe);
+delete(probe);
 end
