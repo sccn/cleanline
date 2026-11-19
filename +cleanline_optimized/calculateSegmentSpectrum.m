@@ -42,6 +42,10 @@ N = size(data, 1); % length of segmented data
 dt = 1/Fs; % sampling interval
 T = N*dt; % length of data in seconds
 E = 0:win:(T - win); % fictitious event triggers
+if isempty(E) && N == round(win*Fs)
+    % The window fits in samples even if T and win differ at rounding precision.
+    E = 0;
+end
 win = [0, win]; % use window length to define left and right limits of windows around triggers
 data = createdatamatc(data, E, Fs, win); % segmented data
 N = size(data,1); % length of segmented data

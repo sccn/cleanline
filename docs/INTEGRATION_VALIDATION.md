@@ -39,3 +39,28 @@ official V2. It was not run in this integration session because the
 separately supplied validation `.set` dataset was unavailable here.
 Interactive GUI layout and all parameter combinations remain for the
 maintainer's alpha test.
+
+## Epoched Optimized V2 (2026-11-19)
+
+For epoched EEG, the integrated dialog uses one epoch for both window length
+and step. Optimized V2 runs the same channel solver separately for each
+epoch, including when called directly with a channels × samples × epochs
+array. Before processing, it emits `CleanLine:EpochedDataDiscouraged` once
+per epoched dataset to recommend cleaning continuous EEG before epoching.
+Tapers and the frequency grid can be shared because they depend only
+on the settings. The spectrum, convergence decisions, and overlap smoothing
+are computed afresh within each epoch.
+
+Original V2 indexes each channel as one concatenated time series. With
+overlapping windows, this can place samples from adjacent epochs in the
+same fit. Even for aligned windows, Original V2 uses the concatenated
+channel spectrum and shared convergence decisions. Batch Optimized V2 is
+therefore validated against independent per-epoch calls to both V2 engines.
+See [the epoched regression test](../tests/test_cleanline_epoched.m) for the
+tested window configurations and exact sample comparisons.
+
+MATLAB R2024b Update 3 and EEGLAB 2024.0 returned exact epoch isolation and
+Serial/Parallel equality for 2-, 4-, and 6-second epochs with both single-
+and double-precision input. The integrated dialog and the direct engine
+also passed with 201 samples at 129 Hz, where floating-point rounding can
+make the epoch duration appear shorter than its full-epoch window.

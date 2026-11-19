@@ -48,7 +48,6 @@ if strcmp(executionMode,'parallel')
 end
 % Reuse the official argument definitions and validation for the V2 options.
 [~,~,~,~,~,~,g] = cleanline_check('EEG',EEG,args{:},'Newversion',true);
-assert(EEG.trials==1,'Optimized V2 requires continuous EEG.');
 assert(strcmpi(g.sigtype,'Channels'), ...
     'V2 cleans channels; use Legacy V1 for ICA components.');
 assert(g.winstep<=g.winsize,'SlidingWinStep cannot exceed SlidingWinLength.');

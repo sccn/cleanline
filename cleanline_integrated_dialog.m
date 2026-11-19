@@ -14,6 +14,10 @@ labels = {'Implementation:', 'Execution mode (Optimized V2):', 'Signal type:', .
 choices = {{'Optimized V2','Original V2','Historical V1'}, ...
     {'Serial','Parallel'}, {'Channels','Components'}};
 defaults = {'60',sprintf('1:%d',EEG.nbchan),'0.01','2','2','4','1','100','2'};
+if EEG.trials > 1
+    epochSeconds = sprintf('%.17g',EEG.pnts/EEG.srate);
+    defaults(6:7) = {epochSeconds,epochSeconds};
+end
 
 screen = get(0,'ScreenSize');
 width = min(715,screen(3)-24);

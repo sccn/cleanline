@@ -6,7 +6,8 @@ function [signal, lineNoiseOut] = cleanLineNoise(signal, lineNoiseIn)
 % [signal, lineNoiseOut] = hcleanLineNoise(signal, lineNoiseIn)
 %
 % Parameters:
-%    signal          Structure with .data and .srate fields
+%    signal          Structure with .data and .srate fields. Data are
+%                    channels x samples x epochs, with each epoch cleaned independently.
 %    lineNoiseIn     Input structure with fields described below
 %
 % Structure parameters (lineNoiseIn):
@@ -49,6 +50,34 @@ end
 hbw = lineNoiseOut.taperBandWidth/2;   % half-bandwidth
 lineNoiseOut.taperTemplate = [hbw, lineNoiseOut.taperWindowSize, 1];
 Nwin = round(lineNoiseOut.Fs*lineNoiseOut.taperWindowSize); % number of samples in window
+if size(signal.data,3) > 1
+    warning('CleanLine:EpochedDataDiscouraged', ...
+        ['Applying CleanLine to epoched EEG is strongly discouraged. ' ...
+         'Short epochs limit the reliability of multitaper spectral estimation and sinusoidal fitting, ' ...
+         'potentially resulting in inconsistent line-noise removal across trials. ' ...
+         'Whenever possible, remove line noise from continuous EEG before epoching. ' ...
+         'Processing will continue with epoch-independent estimation.']);
+    epochSamples = size(signal.data,2);
+    Nstep = round(lineNoiseOut.Fs*lineNoiseOut.taperWindowStep);
+    if ~isfinite(Nwin) || Nwin < 1 || Nwin > epochSamples
+        error('CleanLine:EpochWindowLength', ...
+            'Window length must round to 1 to %d samples (one epoch). Got %g samples.', ...
+            epochSamples,Nwin);
+    end
+    if ~isfinite(Nstep) || Nstep < 1 || Nstep > Nwin
+        error('CleanLine:EpochWindowStep', ...
+            'Window step must round to 1 to %d samples (one window). Got %g samples.', ...
+            Nwin,Nstep);
+    end
+    timeBandwidth = lineNoiseOut.taperWindowSize*hbw;
+    if ~isfinite(timeBandwidth) || floor(2*timeBandwidth-1) < 2 || timeBandwidth >= Nwin/2
+        error('CleanLine:EpochTapers', ...
+            ['A %.6g s epoch window with taper bandwidth %.6g Hz cannot support the F-test. ' ...
+             'Choose a window and taper bandwidth that yield at least two tapers ' ...
+             'and a time-bandwidth product below half the window sample count.'], ...
+            lineNoiseOut.taperWindowSize,lineNoiseOut.taperBandWidth);
+    end
+end
 lineNoiseOut.tapers = cleanline_optimized.checkTapers(lineNoiseOut.taperTemplate, Nwin, lineNoiseOut.Fs);
 lineNoiseOut.significanceThreshold = finv(1 - lineNoiseOut.p, 2, 2*size(lineNoiseOut.tapers, 2) - 2);
 Nfft = max(2^(nextpow2(Nwin) + lineNoiseOut.pad), Nwin);
@@ -85,27 +114,35 @@ if strcmpi(mode, 'parallel')
     end
     if isempty(chans) || all(diff(chans)==1)
         parfor ch = chans
-            data(ch, :) = cleanline_optimized.removeLinesMovingWindow(squeeze(data(ch, :)), lineNoiseOut);
+            data(ch,:,:) = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
             if showProgress, send(progressQueue,ch); end
         end
     else
         cleaned = cell(1,numel(chans));
         parfor k = 1:numel(chans)
             ch = chans(k);
-            cleaned{k} = cleanline_optimized.removeLinesMovingWindow(squeeze(data(ch, :)), lineNoiseOut);
+            cleaned{k} = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
             if showProgress, send(progressQueue,ch); end
         end
         for k = 1:numel(chans)
-            data(chans(k), :) = cleaned{k};
+            data(chans(k),:,:) = cleaned{k};
         end
     end
 else
     for k = 1:numel(chans)
         ch = chans(k);
-        data(ch, :) = cleanline_optimized.removeLinesMovingWindow(squeeze(data(ch, :)), lineNoiseOut);
+        data(ch,:,:) = cleanChannelEpochs(data(ch,:,:),lineNoiseOut);
         if showProgress, waitbar(k/numel(chans),progressWindow); end
     end
 end
 if showProgress, drawnow; end
 signal.data = data;
-clear data;
+end
+
+function channelData = cleanChannelEpochs(channelData,lineNoise)
+% Restart the spectrum, iterative fits and overlap smoothing for each epoch.
+for trial = 1:size(channelData,3)
+    channelData(1,:,trial) = cleanline_optimized.removeLinesMovingWindow( ...
+        channelData(1,:,trial),lineNoise);
+end
+end
